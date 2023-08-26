@@ -16,8 +16,9 @@ import keyboard
 from neural_network import read_ocr
 import requests
 import webbrowser
+import traceback
 
-version = "RokTracker-v7.3"
+version = "RokTracker-v8.2"
 def tointcheck(element):
 	try:
 		return int(element)
@@ -208,7 +209,7 @@ try:
 			with open(('check_more_info.png'), 'wb') as f:
 						f.write(image_check)
 			image_check = cv2.imread('check_more_info.png',cv2.IMREAD_GRAYSCALE)
-			roi = (313, 727, 137, 29)	
+			roi = (294, 786, 116, 29)
 			im_check_more_info = image_check[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 			check_more_info = pytesseract.image_to_string(im_check_more_info,config="-c tessedit_char_whitelist=MoreInfo")
 			if 'MoreInfo' not in check_more_info :
@@ -223,7 +224,7 @@ try:
 				break
 		
 		#nickname copy
-		device.shell(f'input tap 690 283')
+		device.shell(f'input tap 654 245')
 		time.sleep(1.5)
 		
 		##### Governor main page capture #####
@@ -232,52 +233,63 @@ try:
 					f.write(image)
 		image = cv2.imread('gov_info.png')
 		#Power and Killpoints
-		roi = (770, 230, 200, 35)
+		roi = (733, 192, 200, 35)
 		im_gov_id = image[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 		image = cv2.imread('gov_info.png')
 		kernel = np.ones((2, 2), np.uint8)
 	 
 		image = cv2.dilate(image, kernel) 
-		roi = (898, 364, 180, 44)
+		roi = (874, 327, 224, 40)
 		im_gov_power = image[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
-		roi = (1114, 364, 222, 44)
+		roi = (1106, 327, 224, 40)
 		im_gov_killpoints = image[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 		gov_name = tk.Tk().clipboard_get()
-		roi = (645, 362, 260, 40) #alliance tag
+
+
+		#New image for alliance tag
+		image = cv2.imread('gov_info.png')
+		kernel = np.ones((2, 2), np.uint8)
+	 
+		image = cv2.erode(image, kernel) 
+		roi = (598, 331, 250, 40) #alliance tag
 		im_alliance_tag = image[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 		
 		#kills tier
-		device.shell(f'input tap 1118 350')
+		device.shell(f'input tap 1118 314')
 		
 		#1st image OCR
 		gov_id = read_ocr(im_gov_id)
 		gov_power = read_ocr(im_gov_power)
 		gov_killpoints = read_ocr(im_gov_killpoints)
+		gov_killpoints2 = pytesseract.image_to_string(im_gov_killpoints,config="-c tessedit_char_whitelist=0123456789")
+		gov_power2 = pytesseract.image_to_string(im_gov_power,config="-c tessedit_char_whitelist=0123456789")
+		gov_killpoints = gov_killpoints2 if (len(''.join(str(gov_killpoints).split()))-1 > len(str(gov_killpoints))) else gov_killpoints
+		gov_power = gov_power2 if (len(''.join(str(gov_power2).split()))-1 > len(str(gov_power))) else gov_power
+
 		time.sleep(1)
-		
 		##### Kill tier Capture #####
 		image = device.screencap()
 		with open(('kills_tier.png'), 'wb') as f:
 					f.write(image)
-		image2 = cv2.imread('kills_tier.png') 	
-		image2 = cv2.fastNlMeansDenoisingColored(image2,None,20,20,7,21) 
-		roi = (863, 466, 215, 26) #tier 1
+		image2 = cv2.imread('kills_tier.png')
+		image2 = cv2.fastNlMeansDenoisingColored(image2,None,20,20,7,3)
+		roi = (862, 430, 215, 26) #tier 1
 		im_kills_tier1 = image2[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 
-		roi = (863, 511, 215, 26) #tier 2
+		roi = (862, 475, 215, 26) #tier 2
 		im_kills_tier2 = image2[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 
-		roi = (863, 556, 215, 26) #tier 3
+		roi = (862, 516, 215, 26) #tier 3
 		im_kills_tier3 = image2[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 
-		roi = (863, 601, 215, 26) #tier 4
+		roi = (862, 561, 215, 26) #tier 4
 		im_kills_tier4 = image2[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 
-		roi = (863, 646, 215, 26) #tier 5
+		roi = (862, 606, 215, 26) #tier 5
 		im_kills_tier5 = image2[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
 
 		#More info tab
-		device.shell(f'input tap 387 664') 
+		device.shell(f'input tap 350 740') 
 		
 		##### Kill tier OCR #####
 		gov_kills_tier1 = pytesseract.image_to_string(im_kills_tier1,config="-c tessedit_char_whitelist=0123456789")
@@ -344,15 +356,15 @@ try:
 			else:
 				gov_dead = gov_dead2
 		if gov_kills_tier1 == '' :
-			gov_kills_tier1 = 'Unknown\n'
+			gov_kills_tier1 = '0'
 		if gov_kills_tier2 == '' :
-			gov_kills_tier2 = 'Unknown\n'
+			gov_kills_tier2 = '0'
 		if gov_kills_tier3 == '' :
-			gov_kills_tier3 = 'Unknown\n'
+			gov_kills_tier3 = '0'
 		if gov_kills_tier4 == '' :
-			gov_kills_tier4 = 'Unknown\n'
+			gov_kills_tier4 = '0'
 		if gov_kills_tier5 == '' :
-			gov_kills_tier5 = 'Unknown\n'
+			gov_kills_tier5 = '0'
 		if gov_rss_assistance == '' :
 			if gov_rss_assistance2 =='':
 				if gov_rss_assistance3 =='':
@@ -383,6 +395,7 @@ try:
 except:
 	print('An issue has occured. Please rerun the tool and use "resume scan option" from where tool stopped. If issue seems to remain, please contact me on discord!')
 	#Save the excel file in the following format e.g. TOP300-2021-12-25-1253.xls or NEXT300-2021-12-25-1253.xls
+	traceback.print_exc()
 	pass
 
 
